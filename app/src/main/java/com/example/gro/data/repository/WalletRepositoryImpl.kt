@@ -1,15 +1,12 @@
 package com.example.gro.data.repository
 
 import android.content.Context
-import android.net.Uri
 import android.os.PowerManager
-import android.util.Base64
 import android.util.Log
 import com.example.gro.data.local.datastore.UserPreferences
 import com.example.gro.domain.model.WalletState
 import com.example.gro.domain.repository.WalletRepository
 import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
-import com.solana.mobilewalletadapter.clientlib.ConnectionIdentity
 import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
 import com.solana.mobilewalletadapter.clientlib.TransactionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -23,19 +20,12 @@ import javax.inject.Singleton
 @Singleton
 class WalletRepositoryImpl @Inject constructor(
     private val userPreferences: UserPreferences,
+    private val mobileWalletAdapter: MobileWalletAdapter,
     @ApplicationContext private val context: Context,
 ) : WalletRepository {
 
     private val _walletState = MutableStateFlow<WalletState>(WalletState.Disconnected)
     override val walletState: Flow<WalletState> = _walletState
-
-    private val connectionIdentity = ConnectionIdentity(
-        identityUri = Uri.parse("https://gro.app"),
-        iconUri = Uri.parse("favicon.ico"),
-        identityName = "Gr\u014D",
-    )
-
-    private val mobileWalletAdapter = MobileWalletAdapter(connectionIdentity)
 
     init {
         val prefs = runBlocking { userPreferences.userPreferencesFlow.first() }
@@ -71,7 +61,7 @@ class WalletRepositoryImpl @Inject constructor(
                 is TransactionResult.Success -> {
                     val authResult = result.authResult
                     val publicKeyBytes = authResult.accounts.first().publicKey
-                    val pubKey = Base64.encodeToString(publicKeyBytes, Base64.NO_WRAP)
+                    val pubKey = org.sol4k.PublicKey(publicKeyBytes).toBase58()
                     val token = authResult.authToken
                     Log.d(TAG, "Connected: pubKey=$pubKey")
                     userPreferences.setWalletConnection(pubKey, token)
