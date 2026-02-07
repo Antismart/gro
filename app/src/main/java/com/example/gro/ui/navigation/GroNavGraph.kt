@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.gro.ui.screen.deposit.DepositScreen
 import com.example.gro.ui.screen.garden.GardenScreen
 import com.example.gro.ui.screen.onboarding.OnboardingScreen
 import com.example.gro.ui.screen.splash.SplashScreen
@@ -49,6 +50,18 @@ fun GroNavGraph(activityResultSender: ActivityResultSender) {
                     navController.navigate(Screen.Onboarding.route) {
                         popUpTo(Screen.Garden.route) { inclusive = true }
                     }
+                },
+                onNavigateToDeposit = {
+                    navController.navigate(Screen.Deposit.route)
+                },
+            )
+        }
+
+        composable(Screen.Deposit.route) {
+            DepositScreen(
+                activityResultSender = activityResultSender,
+                onNavigateBack = {
+                    navController.popBackStack()
                 },
             )
         }
