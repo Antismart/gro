@@ -52,6 +52,30 @@ class SolanaRpcClient @Inject constructor(
         parsed["result"]?.jsonObject?.get("value")?.jsonPrimitive?.long ?: 0L
     }
 
+    suspend fun getLatestBlockhash(): String = withContext(Dispatchers.IO) {
+        val request = buildJsonObject {
+            put("jsonrpc", "2.0")
+            put("id", 1)
+            put("method", "getLatestBlockhash")
+            putJsonArray("params") {
+                add(buildJsonObject {
+                    put("commitment", "finalized")
+                })
+            }
+        }
+
+        val response: String = httpClient.post(rpcUrl) {
+            contentType(ContentType.Application.Json)
+            setBody(request.toString())
+        }.body()
+
+        val parsed = json.parseToJsonElement(response).jsonObject
+        parsed["result"]?.jsonObject
+            ?.get("value")?.jsonObject
+            ?.get("blockhash")?.jsonPrimitive?.content
+            ?: throw IllegalStateException("Failed to get latest blockhash")
+    }
+
     suspend fun getTokenAccounts(publicKey: String): List<TokenAccountInfo> = withContext(Dispatchers.IO) {
         val request = buildJsonObject {
             put("jsonrpc", "2.0")
