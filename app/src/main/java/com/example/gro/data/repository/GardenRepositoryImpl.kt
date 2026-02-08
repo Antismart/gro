@@ -53,6 +53,10 @@ class GardenRepositoryImpl @Inject constructor(
         return plantDao.getPlantByMint(walletAddress, tokenMint)?.toDomain()
     }
 
+    override suspend fun getPlantById(plantId: Long): Plant? {
+        return plantDao.getPlantById(plantId)?.toDomain()
+    }
+
     override suspend fun waterPlant(plantId: Long, depositAmountLamports: Long) {
         val plant = plantDao.getPlantById(plantId) ?: return
         val now = System.currentTimeMillis()

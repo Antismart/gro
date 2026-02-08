@@ -7,6 +7,7 @@ interface GardenRepository {
     fun observeGarden(walletAddress: String): Flow<List<Plant>>
     suspend fun syncGardenWithChain(walletAddress: String)
     suspend fun getPlantByMint(walletAddress: String, tokenMint: String): Plant?
+    suspend fun getPlantById(plantId: Long): Plant?
     suspend fun waterPlant(plantId: Long, depositAmountLamports: Long)
     suspend fun createPlant(walletAddress: String, tokenMint: String, depositAmountLamports: Long): Plant
 }

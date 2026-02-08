@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -36,7 +37,7 @@ import com.example.gro.ui.component.GroButton
 import com.example.gro.ui.component.GroButtonStyle
 import com.example.gro.ui.component.garden.EmptyGardenPrompt
 import com.example.gro.ui.component.garden.GardenScene
-import com.example.gro.ui.component.garden.PlantDetailSheet
+import com.example.gro.ui.component.garden.StreakBadge
 import com.example.gro.ui.theme.GroCream
 import com.example.gro.ui.theme.GroEarth
 import com.example.gro.ui.theme.GroGreen
@@ -47,6 +48,9 @@ import com.example.gro.ui.theme.JetBrainsMonoFamily
 fun GardenScreen(
     onDisconnect: () -> Unit,
     onNavigateToDeposit: () -> Unit,
+    onNavigateToPlantDetail: (Long) -> Unit = {},
+    onNavigateToVisit: () -> Unit = {},
+    onNavigateToJournal: () -> Unit = {},
     viewModel: GardenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -79,11 +83,23 @@ fun GardenScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        text = uiState.greeting,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = GroEarth,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = uiState.greeting,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = GroEarth,
+                        )
+                        uiState.streak?.let { streak ->
+                            if (streak.currentStreak > 0) {
+                                Spacer(modifier = Modifier.width(GroSpacing.sm))
+                                StreakBadge(streakCount = streak.currentStreak)
+                            }
+                        }
+                    }
                     uiState.walletAddress?.let { address ->
                         Spacer(modifier = Modifier.height(GroSpacing.xxs))
                         Text(
@@ -147,7 +163,8 @@ fun GardenScreen(
                     else -> {
                         GardenScene(
                             plants = uiState.plants,
-                            onPlantClick = { viewModel.selectPlant(it) },
+                            onPlantClick = { onNavigateToPlantDetail(it.id) },
+                            weather = uiState.weather,
                             modifier = Modifier.fillMaxSize(),
                         )
                     }
@@ -168,32 +185,46 @@ fun GardenScreen(
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(horizontal = GroSpacing.lg, vertical = GroSpacing.md),
             ) {
-                Row(
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(GroSpacing.sm),
-                    verticalAlignment = Alignment.CenterVertically,
+                    verticalArrangement = Arrangement.spacedBy(GroSpacing.xs),
                 ) {
-                    GroButton(
-                        text = "Water",
-                        onClick = onNavigateToDeposit,
-                        modifier = Modifier.weight(1f),
-                    )
-                    GroButton(
-                        text = "Disconnect",
-                        onClick = { viewModel.disconnect() },
-                        style = GroButtonStyle.Tertiary,
-                        modifier = Modifier.weight(1f),
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(GroSpacing.sm),
+                    ) {
+                        GroButton(
+                            text = "Water",
+                            onClick = onNavigateToDeposit,
+                            modifier = Modifier.weight(1f),
+                        )
+                        GroButton(
+                            text = "Visit",
+                            onClick = onNavigateToVisit,
+                            style = GroButtonStyle.Secondary,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(GroSpacing.sm),
+                    ) {
+                        GroButton(
+                            text = "Journal",
+                            onClick = onNavigateToJournal,
+                            style = GroButtonStyle.Secondary,
+                            modifier = Modifier.weight(1f),
+                        )
+                        GroButton(
+                            text = "Disconnect",
+                            onClick = { viewModel.disconnect() },
+                            style = GroButtonStyle.Tertiary,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }
     }
 
-    // Plant detail bottom sheet
-    uiState.selectedPlant?.let { plant ->
-        PlantDetailSheet(
-            plant = plant,
-            onDismiss = { viewModel.dismissPlantDetail() },
-        )
-    }
 }
