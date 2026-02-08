@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -7,12 +10,17 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = if (keystorePropertiesFile.exists()) {
+    Properties().apply { load(FileInputStream(keystorePropertiesFile)) }
+} else null
+
 android {
     namespace = "com.example.gro"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.gro"
+        applicationId = "com.gro.app"
         minSdk = 26
         targetSdk = 36
         versionCode = 1
@@ -21,17 +29,32 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        if (keystoreProperties != null) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         debug {
             buildConfigField("String", "SOLANA_RPC_URL", "\"https://api.devnet.solana.com\"")
             buildConfigField("String", "SOLANA_CLUSTER", "\"devnet\"")
         }
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (keystoreProperties != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             buildConfigField("String", "SOLANA_RPC_URL", "\"https://api.mainnet-beta.solana.com\"")
             buildConfigField("String", "SOLANA_CLUSTER", "\"mainnet-beta\"")
         }
