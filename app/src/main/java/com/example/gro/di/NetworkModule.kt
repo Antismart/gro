@@ -1,5 +1,8 @@
 package com.example.gro.di
 
+import com.example.gro.BuildConfig
+import com.example.gro.data.remote.PriceFeedService
+import com.example.gro.data.remote.SolanaConfig
 import com.example.gro.data.remote.SolanaRpcClient
 import dagger.Module
 import dagger.Provides
@@ -33,7 +36,20 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideSolanaRpcClient(httpClient: HttpClient): SolanaRpcClient {
-        return SolanaRpcClient(httpClient)
+    fun provideSolanaConfig(): SolanaConfig = SolanaConfig(
+        rpcEndpoint = BuildConfig.SOLANA_RPC_URL,
+        cluster = BuildConfig.SOLANA_CLUSTER,
+    )
+
+    @Provides
+    @Singleton
+    fun provideSolanaRpcClient(httpClient: HttpClient, config: SolanaConfig): SolanaRpcClient {
+        return SolanaRpcClient(httpClient, config)
+    }
+
+    @Provides
+    @Singleton
+    fun providePriceFeedService(httpClient: HttpClient): PriceFeedService {
+        return PriceFeedService(httpClient)
     }
 }

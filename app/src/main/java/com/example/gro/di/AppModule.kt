@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import com.example.gro.data.local.datastore.UserPreferences
 import com.example.gro.data.local.datastore.dataStore
+import com.example.gro.data.local.secure.SecureTokenStorage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,7 +25,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideUserPreferences(dataStore: DataStore<Preferences>): UserPreferences {
-        return UserPreferences(dataStore)
+    fun provideSecureTokenStorage(@ApplicationContext context: Context): SecureTokenStorage {
+        return SecureTokenStorage(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserPreferences(
+        dataStore: DataStore<Preferences>,
+        secureTokenStorage: SecureTokenStorage,
+    ): UserPreferences {
+        return UserPreferences(dataStore, secureTokenStorage)
     }
 }

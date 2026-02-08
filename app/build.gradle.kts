@@ -22,12 +22,18 @@ android {
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "SOLANA_RPC_URL", "\"https://api.devnet.solana.com\"")
+            buildConfigField("String", "SOLANA_CLUSTER", "\"devnet\"")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("String", "SOLANA_RPC_URL", "\"https://api.mainnet-beta.solana.com\"")
+            buildConfigField("String", "SOLANA_CLUSTER", "\"mainnet-beta\"")
         }
     }
     compileOptions {
@@ -39,6 +45,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -94,6 +101,9 @@ dependencies {
     // Solana
     implementation(libs.sol4k)
     implementation(libs.mwa.clientlib.ktx)
+
+    // Security
+    implementation(libs.security.crypto)
 
     // Testing
     testImplementation(libs.junit)

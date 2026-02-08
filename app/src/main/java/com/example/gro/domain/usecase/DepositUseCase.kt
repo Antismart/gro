@@ -21,7 +21,7 @@ class DepositUseCase @Inject constructor(
         lamports: Long,
         species: PlantSpecies = PlantSpecies.SOL,
     ): DepositResult {
-        val result = depositRepository.depositSol(sender, walletAddress, lamports)
+        val result = depositRepository.depositSol(sender, walletAddress, lamports, species)
 
         if (result is DepositResult.Success) {
             val tokenMint = species.tokenMint
@@ -37,7 +37,7 @@ class DepositUseCase @Inject constructor(
             journalRepository.logEntry(
                 walletAddress = walletAddress,
                 action = JournalAction.DEPOSIT,
-                details = "Deposited ${"%.4f".format(solAmount)} SOL to grow ${species.plantName}",
+                details = "Deposited ${"%.4f".format(solAmount)} ${species.displayName} to grow ${species.plantName}",
             )
         }
 

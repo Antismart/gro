@@ -144,6 +144,15 @@ private fun GardenContent(
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     )
+                    if (uiState.solPrice > 0) {
+                        val usdValue = uiState.totalPortfolioValue * uiState.solPrice
+                        Text(
+                            text = "${"$%.2f".format(usdValue)} USD",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = GroEarth.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
                 }
             }
 

@@ -2,9 +2,11 @@ package com.example.gro.ui.screen.garden
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gro.data.remote.PriceFeedService
 import com.example.gro.data.remote.SolanaRpcClient
 import com.example.gro.domain.model.GardenWeather
 import com.example.gro.domain.model.Plant
+import com.example.gro.domain.model.PlantSpecies
 import com.example.gro.domain.model.Streak
 import com.example.gro.domain.repository.StreakRepository
 import com.example.gro.domain.repository.WalletRepository
@@ -23,6 +25,7 @@ data class GardenUiState(
     val solBalance: Long = 0L,
     val plants: List<Plant> = emptyList(),
     val totalPortfolioValue: Double = 0.0,
+    val solPrice: Double = 0.0,
     val isLoading: Boolean = true,
     val error: String? = null,
     val greeting: String = "Good morning",
@@ -38,6 +41,7 @@ class GardenViewModel @Inject constructor(
     private val syncGardenUseCase: SyncGardenUseCase,
     private val streakRepository: StreakRepository,
     private val calculateWeatherUseCase: CalculateWeatherUseCase,
+    private val priceFeedService: PriceFeedService,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GardenUiState())
@@ -76,14 +80,26 @@ class GardenViewModel @Inject constructor(
                 val balance = solanaRpcClient.getBalance(address)
                 syncGardenUseCase(address)
 
+                // Fetch real prices from Jupiter
+                val mintAddresses = PlantSpecies.entries.map { it.tokenMint }
+                val prices = try {
+                    priceFeedService.getTokenPrices(mintAddresses)
+                } catch (_: Exception) {
+                    emptyMap()
+                }
+
+                val solMint = PlantSpecies.SOL.tokenMint
+                val solPrice = prices[solMint] ?: 0.0
+                val portfolioSol = balance / 1_000_000_000.0
+
                 observeGardenUseCase(address).collect { plants ->
-                    val portfolioValue = balance / 1_000_000_000.0
+                    val weather = calculateWeatherUseCase(_uiState.value.streak, plants)
                     _uiState.update { state ->
-                        val weather = calculateWeatherUseCase(state.streak, plants)
                         state.copy(
                             solBalance = balance,
                             plants = plants,
-                            totalPortfolioValue = portfolioValue,
+                            totalPortfolioValue = portfolioSol,
+                            solPrice = solPrice,
                             isLoading = false,
                             weather = weather,
                         )

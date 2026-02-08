@@ -9,10 +9,7 @@ import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.int
@@ -22,15 +19,14 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import kotlinx.serialization.json.putJsonObject
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SolanaRpcClient @Inject constructor(
     private val httpClient: HttpClient,
+    private val config: SolanaConfig,
 ) {
-    private val rpcUrl = "https://api.devnet.solana.com"
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun getBalance(publicKey: String): Long = withContext(Dispatchers.IO) {
@@ -43,7 +39,7 @@ class SolanaRpcClient @Inject constructor(
             }
         }
 
-        val response: String = httpClient.post(rpcUrl) {
+        val response: String = httpClient.post(config.rpcEndpoint) {
             contentType(ContentType.Application.Json)
             setBody(request.toString())
         }.body()
@@ -64,7 +60,7 @@ class SolanaRpcClient @Inject constructor(
             }
         }
 
-        val response: String = httpClient.post(rpcUrl) {
+        val response: String = httpClient.post(config.rpcEndpoint) {
             contentType(ContentType.Application.Json)
             setBody(request.toString())
         }.body()
@@ -92,7 +88,7 @@ class SolanaRpcClient @Inject constructor(
             }
         }
 
-        val response: String = httpClient.post(rpcUrl) {
+        val response: String = httpClient.post(config.rpcEndpoint) {
             contentType(ContentType.Application.Json)
             setBody(request.toString())
         }.body()

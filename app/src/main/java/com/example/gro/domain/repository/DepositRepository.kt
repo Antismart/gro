@@ -1,5 +1,6 @@
 package com.example.gro.domain.repository
 
+import com.example.gro.domain.model.PlantSpecies
 import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 
 sealed class DepositResult {
@@ -12,5 +13,6 @@ interface DepositRepository {
         sender: ActivityResultSender,
         fromAddress: String,
         lamports: Long,
+        species: PlantSpecies = PlantSpecies.SOL,
     ): DepositResult
 }
