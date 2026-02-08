@@ -19,6 +19,7 @@ data class JournalUiState(
     val entries: List<JournalEntry> = emptyList(),
     val weeklySummary: WeeklySummary = WeeklySummary(),
     val isLoading: Boolean = true,
+    val error: String? = null,
 )
 
 @HiltViewModel
@@ -36,32 +37,44 @@ class JournalViewModel @Inject constructor(
     }
 
     private fun loadJournal() {
-        val address = walletRepository.getConnectedAddress() ?: return
+        val address = walletRepository.getConnectedAddress() ?: run {
+            _uiState.update { it.copy(isLoading = false, error = "No wallet connected") }
+            return
+        }
 
         // Sync from on-chain history in background
         viewModelScope.launch {
-            syncJournalFromChainUseCase(address)
+            try {
+                syncJournalFromChainUseCase(address)
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Failed to sync on-chain history") }
+            }
         }
 
         viewModelScope.launch {
-            journalRepository.observeEntries(address).collect { entries ->
-                val oneWeekAgo = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
-                val weekEntries = entries.filter { it.timestamp >= oneWeekAgo }
+            try {
+                journalRepository.observeEntries(address).collect { entries ->
+                    val oneWeekAgo = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
+                    val weekEntries = entries.filter { it.timestamp >= oneWeekAgo }
 
-                val summary = WeeklySummary(
-                    deposits = weekEntries.count { it.action == JournalAction.DEPOSIT },
-                    growthEvents = weekEntries.count { it.action == JournalAction.GROWTH },
-                    streakDays = weekEntries.count { it.action == JournalAction.STREAK },
-                    blooms = weekEntries.count { it.action == JournalAction.BLOOM },
-                )
-
-                _uiState.update {
-                    it.copy(
-                        entries = entries,
-                        weeklySummary = summary,
-                        isLoading = false,
+                    val summary = WeeklySummary(
+                        deposits = weekEntries.count { it.action == JournalAction.DEPOSIT },
+                        growthEvents = weekEntries.count { it.action == JournalAction.GROWTH },
+                        streakDays = weekEntries.count { it.action == JournalAction.STREAK },
+                        blooms = weekEntries.count { it.action == JournalAction.BLOOM },
                     )
+
+                    _uiState.update {
+                        it.copy(
+                            entries = entries,
+                            weeklySummary = summary,
+                            isLoading = false,
+                            error = null,
+                        )
+                    }
                 }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(isLoading = false, error = "Failed to load journal") }
             }
         }
     }

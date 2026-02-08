@@ -10,10 +10,12 @@ import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
 import com.solana.mobilewalletadapter.clientlib.TransactionResult
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -28,13 +30,15 @@ class WalletRepositoryImpl @Inject constructor(
     override val walletState: Flow<WalletState> = _walletState
 
     init {
-        val prefs = runBlocking { userPreferences.userPreferencesFlow.first() }
-        if (prefs.connectedWalletAddress != null && prefs.walletAuthToken != null) {
-            _walletState.value = WalletState.Connected(
-                publicKey = prefs.connectedWalletAddress,
-                authToken = prefs.walletAuthToken,
-            )
-            mobileWalletAdapter.authToken = prefs.walletAuthToken
+        CoroutineScope(Dispatchers.IO).launch {
+            val prefs = userPreferences.userPreferencesFlow.first()
+            if (prefs.connectedWalletAddress != null && prefs.walletAuthToken != null) {
+                _walletState.value = WalletState.Connected(
+                    publicKey = prefs.connectedWalletAddress,
+                    authToken = prefs.walletAuthToken,
+                )
+                mobileWalletAdapter.authToken = prefs.walletAuthToken
+            }
         }
     }
 

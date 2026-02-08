@@ -78,7 +78,17 @@ private fun JournalContent(
                 Spacer(modifier = Modifier.height(GroSpacing.lg))
             }
 
-            if (uiState.entries.isEmpty() && !uiState.isLoading) {
+            if (uiState.error != null) {
+                item {
+                    Text(
+                        text = uiState.error ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            } else if (uiState.entries.isEmpty() && !uiState.isLoading) {
                 item {
                     Text(
                         text = "No journal entries yet. Water your garden to get started!",
