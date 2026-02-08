@@ -108,8 +108,69 @@ class DepositRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun sendSunflower(
+        sender: ActivityResultSender,
+        fromAddress: String,
+        toAddress: String,
+    ): DepositResult {
+        val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
+        val wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "gro:mwa-sunflower",
+        )
+        wakeLock.acquire(120_000L)
+
+        return try {
+            val blockhash = solanaRpcClient.getLatestBlockhash()
+            val fromPubkey = PublicKey(fromAddress)
+            val toPubkey = PublicKey(toAddress)
+
+            val transferIx = TransferInstruction(fromPubkey, toPubkey, SUNFLOWER_LAMPORTS)
+            val memoData = "gro:sunflower:v1"
+            val memoIx = org.sol4k.instruction.BaseInstruction(
+                memoData.toByteArray(Charsets.UTF_8),
+                listOf(org.sol4k.AccountMeta.signer(fromPubkey)),
+                PublicKey(MEMO_PROGRAM_ID),
+            )
+
+            val transaction = Transaction(blockhash, listOf(transferIx, memoIx), fromPubkey)
+            val serializedTx = transaction.serialize()
+            Log.d(TAG, "Built sunflower tx, ${serializedTx.size} bytes")
+
+            val result = mobileWalletAdapter.transact(sender) {
+                signAndSendTransactions(
+                    arrayOf(serializedTx),
+                    TransactionParams(null, null, null, null, null),
+                )
+            }
+
+            when (result) {
+                is TransactionResult.Success -> {
+                    val sigBytes = result.payload.signatures.firstOrNull()
+                    val sigStr = sigBytes?.let { Base58.encode(it) } ?: "unknown"
+                    Log.d(TAG, "Sunflower sent: sig=$sigStr")
+                    DepositResult.Success(sigStr)
+                }
+                is TransactionResult.NoWalletFound -> {
+                    DepositResult.Error("No wallet app found")
+                }
+                is TransactionResult.Failure -> {
+                    DepositResult.Error(result.message ?: "Transaction failed")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Sunflower exception", e)
+            DepositResult.Error(e.message ?: "Unexpected error")
+        } finally {
+            if (wakeLock.isHeld) {
+                wakeLock.release()
+            }
+        }
+    }
+
     companion object {
         private const val TAG = "DepositRepo"
         private const val MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
+        private const val SUNFLOWER_LAMPORTS = 1000L // 0.000001 SOL
     }
 }

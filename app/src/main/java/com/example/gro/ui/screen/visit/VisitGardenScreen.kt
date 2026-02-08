@@ -40,10 +40,13 @@ import com.example.gro.ui.theme.GroEarth
 import com.example.gro.ui.theme.GroGreen
 import com.example.gro.ui.theme.GroSand
 import com.example.gro.ui.theme.GroSpacing
+import com.example.gro.ui.theme.GroSunlight
+import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 
 @Composable
 fun VisitGardenScreen(
     onNavigateBack: () -> Unit,
+    activityResultSender: ActivityResultSender,
     viewModel: VisitGardenViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -52,6 +55,7 @@ fun VisitGardenScreen(
         uiState = uiState,
         onUpdateAddress = { viewModel.updateAddress(it) },
         onVisit = { viewModel.visitGarden() },
+        onSendSunflower = { viewModel.sendSunflower(activityResultSender) },
         onNavigateBack = onNavigateBack,
     )
 }
@@ -61,6 +65,7 @@ private fun VisitContent(
     uiState: VisitUiState,
     onUpdateAddress: (String) -> Unit,
     onVisit: () -> Unit,
+    onSendSunflower: () -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     Box(
@@ -178,16 +183,50 @@ private fun VisitContent(
                 }
             }
 
-            // Back button
-            GroButton(
-                text = "Back to my garden",
-                onClick = onNavigateBack,
-                style = GroButtonStyle.Secondary,
+            // Bottom actions
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .windowInsetsPadding(WindowInsets.navigationBars)
                     .padding(horizontal = GroSpacing.lg, vertical = GroSpacing.md),
-            )
+            ) {
+                if (uiState.hasVisited && uiState.plants.isNotEmpty()) {
+                    GroButton(
+                        text = if (uiState.sunflowerSent) "Sunflower sent!" else "Leave a sunflower",
+                        onClick = onSendSunflower,
+                        enabled = !uiState.isSendingSunflower && !uiState.sunflowerSent,
+                        isLoading = uiState.isSendingSunflower,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    if (uiState.sunflowerSent) {
+                        Spacer(modifier = Modifier.height(GroSpacing.xxs))
+                        Text(
+                            text = "Your sunflower has been planted in their garden",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = GroSunlight,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    uiState.error?.let { error ->
+                        Spacer(modifier = Modifier.height(GroSpacing.xs))
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(GroSpacing.sm))
+                }
+                GroButton(
+                    text = "Back to my garden",
+                    onClick = onNavigateBack,
+                    style = GroButtonStyle.Secondary,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
     }
 }
@@ -199,6 +238,7 @@ private fun PreviewVisitInput() {
         uiState = VisitUiState(),
         onUpdateAddress = {},
         onVisit = {},
+        onSendSunflower = {},
         onNavigateBack = {},
     )
 }
@@ -212,6 +252,7 @@ private fun PreviewVisitWithAddress() {
         ),
         onUpdateAddress = {},
         onVisit = {},
+        onSendSunflower = {},
         onNavigateBack = {},
     )
 }

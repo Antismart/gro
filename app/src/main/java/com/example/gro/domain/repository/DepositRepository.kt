@@ -15,4 +15,10 @@ interface DepositRepository {
         lamports: Long,
         species: PlantSpecies = PlantSpecies.SOL,
     ): DepositResult
+
+    suspend fun sendSunflower(
+        sender: ActivityResultSender,
+        fromAddress: String,
+        toAddress: String,
+    ): DepositResult
 }
