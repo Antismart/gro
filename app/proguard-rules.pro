@@ -56,7 +56,9 @@
 -dontwarn androidx.compose.**
 
 # ---- DataStore ----
+-keep class androidx.datastore.preferences.** { *; }
 -keepclassmembers class * extends com.google.protobuf.GeneratedMessageLite { *; }
+-keep class * extends com.google.protobuf.GeneratedMessageLite { *; }
 
 # ---- Security Crypto ----
 -keep class androidx.security.crypto.** { *; }
@@ -68,9 +70,12 @@
 -dontwarn com.airbnb.lottie.**
 -keep class com.airbnb.lottie.** { *; }
 
-# ---- Google Tink / ErrorProne (security-crypto transitive) ----
+# ---- Google Tink / Protobuf / ErrorProne (security-crypto transitive) ----
 -dontwarn com.google.errorprone.annotations.**
+-keep class com.google.crypto.tink.** { *; }
 -dontwarn com.google.crypto.tink.**
+-keep class com.google.protobuf.** { *; }
+-dontwarn com.google.protobuf.**
 
 # ---- SLF4J (Ktor transitive) ----
 -dontwarn org.slf4j.impl.**
