@@ -33,9 +33,14 @@
 -keep class org.bitcoinj.** { *; }
 -dontwarn org.bitcoinj.**
 
-# ---- Mobile Wallet Adapter ----
+# ---- Mobile Wallet Adapter + Solana SDK ----
 -keep class com.solana.mobilewalletadapter.** { *; }
 -dontwarn com.solana.mobilewalletadapter.**
+-keep class com.solana.publickey.** { *; }
+-keep class com.solana.transaction.** { *; }
+-keep class com.solana.rpc.** { *; }
+-keep class com.solana.networking.** { *; }
+-keep class com.funkatronics.encoders.** { *; }
 
 # ---- Room ----
 -keep class * extends androidx.room.RoomDatabase
@@ -62,6 +67,14 @@
 # ---- Lottie ----
 -dontwarn com.airbnb.lottie.**
 -keep class com.airbnb.lottie.** { *; }
+
+# ---- Google Tink / ErrorProne (security-crypto transitive) ----
+-dontwarn com.google.errorprone.annotations.**
+-dontwarn com.google.crypto.tink.**
+
+# ---- SLF4J (Ktor transitive) ----
+-dontwarn org.slf4j.impl.**
+-dontwarn org.slf4j.**
 
 # ---- Kotlin ----
 -dontwarn kotlin.**
