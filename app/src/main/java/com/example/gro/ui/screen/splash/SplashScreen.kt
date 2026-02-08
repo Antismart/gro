@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.gro.ui.theme.GroCream
@@ -68,6 +69,25 @@ fun SplashScreen(
             fontSize = 56.sp,
             color = GroGreen,
             modifier = Modifier.alpha(alpha),
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun PreviewSplash() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(GroCream),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = "Gr\u014D",
+            fontFamily = LoraFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 56.sp,
+            color = GroGreen,
         )
     }
 }

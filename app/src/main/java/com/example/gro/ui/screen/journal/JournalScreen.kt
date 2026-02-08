@@ -21,10 +21,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gro.domain.model.JournalAction
+import com.example.gro.domain.model.JournalEntry
 import com.example.gro.ui.component.GroButton
 import com.example.gro.ui.component.GroButtonStyle
 import com.example.gro.ui.component.journal.JournalEntryCard
+import com.example.gro.ui.component.journal.WeeklySummary
 import com.example.gro.ui.component.journal.WeeklySummaryCard
 import com.example.gro.ui.theme.GroCream
 import com.example.gro.ui.theme.GroEarth
@@ -37,6 +41,14 @@ fun JournalScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    JournalContent(uiState = uiState, onNavigateBack = onNavigateBack)
+}
+
+@Composable
+private fun JournalContent(
+    uiState: JournalUiState,
+    onNavigateBack: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -99,4 +111,36 @@ fun JournalScreen(
                 .padding(horizontal = GroSpacing.lg, vertical = GroSpacing.md),
         )
     }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewJournalWithEntries() {
+    val now = System.currentTimeMillis()
+    JournalContent(
+        uiState = JournalUiState(
+            entries = listOf(
+                JournalEntry(1, "abc", now - 3600000, JournalAction.DEPOSIT,
+                    "Deposited 0.0500 SOL to grow Sol Sprout", 2),
+                JournalEntry(2, "abc", now - 7200000, JournalAction.GROWTH,
+                    "Sol Sprout advanced to Sprout stage", 2),
+                JournalEntry(3, "abc", now - 86400000, JournalAction.STREAK,
+                    "Streak reached 5 days!", 2),
+                JournalEntry(4, "abc", now - 86400000 * 2, JournalAction.DEPOSIT,
+                    "Deposited 0.1000 SOL to grow Bonk Bloom", 1),
+            ),
+            weeklySummary = WeeklySummary(deposits = 3, growthEvents = 2, streakDays = 5, blooms = 0),
+            isLoading = false,
+        ),
+        onNavigateBack = {},
+    )
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewJournalEmpty() {
+    JournalContent(
+        uiState = JournalUiState(isLoading = false),
+        onNavigateBack = {},
+    )
 }

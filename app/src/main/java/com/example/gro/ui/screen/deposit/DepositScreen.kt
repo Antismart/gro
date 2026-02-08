@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.gro.domain.model.PlantSpecies
@@ -59,6 +60,29 @@ fun DepositScreen(
         }
     }
 
+    DepositContent(
+        uiState = uiState,
+        availableSpecies = viewModel.availableSpecies,
+        onSelectSpecies = { viewModel.selectSpecies(it) },
+        onPresetAmount = { viewModel.selectPresetAmount(it) },
+        onCustomAmount = { viewModel.setCustomAmount(it) },
+        onSubmit = { viewModel.submitDeposit(activityResultSender) },
+        onNavigateBack = onNavigateBack,
+        onDismissAnimation = { viewModel.dismissAnimation() },
+    )
+}
+
+@Composable
+private fun DepositContent(
+    uiState: DepositUiState,
+    availableSpecies: List<PlantSpecies>,
+    onSelectSpecies: (PlantSpecies) -> Unit,
+    onPresetAmount: (Double) -> Unit,
+    onCustomAmount: (String) -> Unit,
+    onSubmit: () -> Unit,
+    onNavigateBack: () -> Unit,
+    onDismissAnimation: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -108,11 +132,11 @@ fun DepositScreen(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(GroSpacing.xs),
             ) {
-                viewModel.availableSpecies.forEach { species ->
+                availableSpecies.forEach { species ->
                     SpeciesChip(
                         species = species,
                         selected = uiState.selectedSpecies == species,
-                        onClick = { viewModel.selectSpecies(species) },
+                        onClick = { onSelectSpecies(species) },
                     )
                 }
             }
@@ -120,8 +144,9 @@ fun DepositScreen(
             Spacer(modifier = Modifier.height(GroSpacing.lg))
 
             // Amount display
+            val symbol = uiState.selectedSpecies.displayName
             Text(
-                text = "${"%.4f".format(uiState.amountSol)} SOL",
+                text = "${"%.4f".format(uiState.amountSol)} $symbol",
                 style = MaterialTheme.typography.displayLarge.copy(
                     fontFamily = JetBrainsMonoFamily,
                 ),
@@ -145,9 +170,9 @@ fun DepositScreen(
             ) {
                 listOf(0.01, 0.05, 0.1).forEach { amount ->
                     PresetChip(
-                        label = "$amount SOL",
+                        label = "$amount $symbol",
                         selected = uiState.amountSol == amount && uiState.customAmountText.isEmpty(),
-                        onClick = { viewModel.selectPresetAmount(amount) },
+                        onClick = { onPresetAmount(amount) },
                     )
                 }
             }
@@ -157,8 +182,8 @@ fun DepositScreen(
             // Custom amount
             OutlinedTextField(
                 value = uiState.customAmountText,
-                onValueChange = { viewModel.setCustomAmount(it) },
-                label = { Text("Custom amount (SOL)") },
+                onValueChange = onCustomAmount,
+                label = { Text("Custom amount ($symbol)") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
@@ -186,7 +211,7 @@ fun DepositScreen(
             // Submit
             GroButton(
                 text = if (uiState.amountLamports > 0) "Plant ${uiState.selectedSpecies.plantName}" else "Enter an amount",
-                onClick = { viewModel.submitDeposit(activityResultSender) },
+                onClick = onSubmit,
                 enabled = uiState.amountLamports > 0 && !uiState.isSubmitting,
                 isLoading = uiState.isSubmitting,
                 modifier = Modifier.fillMaxWidth(),
@@ -198,7 +223,7 @@ fun DepositScreen(
         // Success animation overlay
         if (uiState.showAnimation) {
             SeedPlantingAnimation(
-                onAnimationComplete = { viewModel.dismissAnimation() },
+                onAnimationComplete = onDismissAnimation,
             )
         }
     }
@@ -261,4 +286,38 @@ private fun PresetChip(
             color = textColor,
         )
     }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewDepositDefault() {
+    DepositContent(
+        uiState = DepositUiState(),
+        availableSpecies = PlantSpecies.entries,
+        onSelectSpecies = {},
+        onPresetAmount = {},
+        onCustomAmount = {},
+        onSubmit = {},
+        onNavigateBack = {},
+        onDismissAnimation = {},
+    )
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewDepositWithAmount() {
+    DepositContent(
+        uiState = DepositUiState(
+            amountSol = 0.05,
+            amountLamports = 50_000_000,
+            selectedSpecies = PlantSpecies.BONK,
+        ),
+        availableSpecies = PlantSpecies.entries,
+        onSelectSpecies = {},
+        onPresetAmount = {},
+        onCustomAmount = {},
+        onSubmit = {},
+        onNavigateBack = {},
+        onDismissAnimation = {},
+    )
 }

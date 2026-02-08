@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.gro.ui.component.GroButton
@@ -47,6 +48,21 @@ fun VisitGardenScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
+    VisitContent(
+        uiState = uiState,
+        onUpdateAddress = { viewModel.updateAddress(it) },
+        onVisit = { viewModel.visitGarden() },
+        onNavigateBack = onNavigateBack,
+    )
+}
+
+@Composable
+private fun VisitContent(
+    uiState: VisitUiState,
+    onUpdateAddress: (String) -> Unit,
+    onVisit: () -> Unit,
+    onNavigateBack: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -90,7 +106,7 @@ fun VisitGardenScreen(
                 ) {
                     OutlinedTextField(
                         value = uiState.friendAddress,
-                        onValueChange = { viewModel.updateAddress(it) },
+                        onValueChange = onUpdateAddress,
                         label = { Text("Wallet address") },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
@@ -103,12 +119,12 @@ fun VisitGardenScreen(
                             cursorColor = GroBark,
                         ),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-                        keyboardActions = KeyboardActions(onGo = { viewModel.visitGarden() }),
+                        keyboardActions = KeyboardActions(onGo = { onVisit() }),
                     )
                     Spacer(modifier = Modifier.height(GroSpacing.md))
                     GroButton(
                         text = if (uiState.isLoading) "Looking..." else "Visit",
-                        onClick = { viewModel.visitGarden() },
+                        onClick = onVisit,
                         modifier = Modifier.fillMaxWidth(),
                     )
 
@@ -174,4 +190,28 @@ fun VisitGardenScreen(
             )
         }
     }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewVisitInput() {
+    VisitContent(
+        uiState = VisitUiState(),
+        onUpdateAddress = {},
+        onVisit = {},
+        onNavigateBack = {},
+    )
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewVisitWithAddress() {
+    VisitContent(
+        uiState = VisitUiState(
+            friendAddress = "7xKXtg2CW87d97TXJSDpbD5jBkheTqA83TZRuJosgAsU",
+        ),
+        onUpdateAddress = {},
+        onVisit = {},
+        onNavigateBack = {},
+    )
 }

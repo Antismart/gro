@@ -31,8 +31,14 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gro.domain.model.GardenWeather
+import com.example.gro.domain.model.GrowthStage
+import com.example.gro.domain.model.Plant
+import com.example.gro.domain.model.PlantSpecies
+import com.example.gro.domain.model.Streak
 import com.example.gro.ui.component.GroButton
 import com.example.gro.ui.component.GroButtonStyle
 import com.example.gro.ui.component.garden.EmptyGardenPrompt
@@ -60,6 +66,27 @@ fun GardenScreen(
         if (disconnected) onDisconnect()
     }
 
+    GardenContent(
+        uiState = uiState,
+        onNavigateToDeposit = onNavigateToDeposit,
+        onNavigateToPlantDetail = onNavigateToPlantDetail,
+        onNavigateToVisit = onNavigateToVisit,
+        onNavigateToJournal = onNavigateToJournal,
+        onDisconnect = { viewModel.disconnect() },
+        onRetry = { viewModel.loadGarden() },
+    )
+}
+
+@Composable
+private fun GardenContent(
+    uiState: GardenUiState,
+    onNavigateToDeposit: () -> Unit,
+    onNavigateToPlantDetail: (Long) -> Unit,
+    onNavigateToVisit: () -> Unit,
+    onNavigateToJournal: () -> Unit,
+    onDisconnect: () -> Unit,
+    onRetry: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -149,7 +176,7 @@ fun GardenScreen(
                             Spacer(modifier = Modifier.height(GroSpacing.md))
                             GroButton(
                                 text = "Try again",
-                                onClick = { viewModel.loadGarden() },
+                                onClick = onRetry,
                                 style = GroButtonStyle.Secondary,
                             )
                         }
@@ -217,7 +244,7 @@ fun GardenScreen(
                         )
                         GroButton(
                             text = "Disconnect",
-                            onClick = { viewModel.disconnect() },
+                            onClick = onDisconnect,
                             style = GroButtonStyle.Tertiary,
                             modifier = Modifier.weight(1f),
                         )
@@ -226,5 +253,57 @@ fun GardenScreen(
             }
         }
     }
+}
 
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewGardenWithPlants() {
+    val now = System.currentTimeMillis()
+    val fakePlants = listOf(
+        Plant(id = 1, walletAddress = "abc", tokenMint = PlantSpecies.SOL.tokenMint,
+            species = PlantSpecies.SOL, growthStage = GrowthStage.MATURE, healthScore = 90,
+            growthPoints = 80f, plantedAt = now - 86400000 * 14, lastWateredAt = now,
+            totalDeposits = 8, totalDepositedAmount = 500_000_000, gridPositionX = 1, gridPositionY = 1),
+        Plant(id = 2, walletAddress = "abc", tokenMint = PlantSpecies.BONK.tokenMint,
+            species = PlantSpecies.BONK, growthStage = GrowthStage.SPROUT, healthScore = 75,
+            growthPoints = 20f, plantedAt = now - 86400000 * 3, lastWateredAt = now,
+            totalDeposits = 3, totalDepositedAmount = 100_000_000, gridPositionX = 2, gridPositionY = 0),
+    )
+    GardenContent(
+        uiState = GardenUiState(
+            walletAddress = "AbCdEfGhIjKlMnOpQrStUvWx",
+            plants = fakePlants,
+            totalPortfolioValue = 1.2345,
+            isLoading = false,
+            greeting = "Good afternoon",
+            streak = Streak("abc", 5, 12, "2026-02-07", 42),
+            weather = GardenWeather.SUNNY,
+        ),
+        onNavigateToDeposit = {},
+        onNavigateToPlantDetail = {},
+        onNavigateToVisit = {},
+        onNavigateToJournal = {},
+        onDisconnect = {},
+        onRetry = {},
+    )
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewGardenEmpty() {
+    GardenContent(
+        uiState = GardenUiState(
+            walletAddress = "AbCdEfGhIjKlMnOpQrStUvWx",
+            plants = emptyList(),
+            totalPortfolioValue = 0.0,
+            isLoading = false,
+            greeting = "Good morning",
+        ),
+        onNavigateToDeposit = {},
+        onNavigateToPlantDetail = {},
+        onNavigateToVisit = {},
+        onNavigateToJournal = {},
+        onDisconnect = {},
+        onRetry = {},
+    )
 }

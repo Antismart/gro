@@ -28,8 +28,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gro.domain.model.Plant
+import com.example.gro.domain.model.PlantSpecies
 import com.example.gro.domain.model.GrowthStage
 import com.example.gro.ui.component.GroButton
 import com.example.gro.ui.component.GroButtonStyle
@@ -49,6 +52,19 @@ fun PlantDetailScreen(
 ) {
     val plant by viewModel.plant.collectAsState()
 
+    PlantDetailContent(
+        plant = plant,
+        onNavigateBack = onNavigateBack,
+        onNavigateToDeposit = onNavigateToDeposit,
+    )
+}
+
+@Composable
+private fun PlantDetailContent(
+    plant: Plant?,
+    onNavigateBack: () -> Unit,
+    onNavigateToDeposit: () -> Unit,
+) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -226,5 +242,30 @@ private fun GrowthProgressRow(currentStage: GrowthStage) {
         text = currentStage.displayName,
         style = MaterialTheme.typography.labelMedium,
         color = GroGreen,
+    )
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun PreviewPlantDetail() {
+    val now = System.currentTimeMillis()
+    PlantDetailContent(
+        plant = Plant(
+            id = 1,
+            walletAddress = "abc",
+            tokenMint = PlantSpecies.SOL.tokenMint,
+            species = PlantSpecies.SOL,
+            growthStage = GrowthStage.SAPLING,
+            healthScore = 85,
+            growthPoints = 45f,
+            plantedAt = now - 86400000 * 7,
+            lastWateredAt = now - 3600000,
+            totalDeposits = 5,
+            totalDepositedAmount = 250_000_000,
+            gridPositionX = 0,
+            gridPositionY = 0,
+        ),
+        onNavigateBack = {},
+        onNavigateToDeposit = {},
     )
 }
