@@ -25,6 +25,7 @@ data class GardenUiState(
     val solBalance: Long = 0L,
     val plants: List<Plant> = emptyList(),
     val totalPortfolioValue: Double = 0.0,
+    val totalPortfolioUsd: Double = 0.0,
     val solPrice: Double = 0.0,
     val isLoading: Boolean = true,
     val error: String? = null,
@@ -92,6 +93,19 @@ class GardenViewModel @Inject constructor(
                 val solPrice = prices[solMint] ?: 0.0
                 val portfolioSol = balance / 1_000_000_000.0
 
+                // Compute full USD portfolio: SOL + SPL tokens
+                var totalUsd = portfolioSol * solPrice
+                val tokenAccounts = try {
+                    solanaRpcClient.getTokenAccounts(address)
+                } catch (_: Exception) {
+                    emptyList()
+                }
+                for (token in tokenAccounts) {
+                    val tokenPrice = prices[token.mint] ?: 0.0
+                    val tokenBalance = token.amount.toDouble() / Math.pow(10.0, token.decimals.toDouble())
+                    totalUsd += tokenBalance * tokenPrice
+                }
+
                 observeGardenUseCase(address).collect { plants ->
                     val weather = calculateWeatherUseCase(_uiState.value.streak, plants)
                     _uiState.update { state ->
@@ -99,6 +113,7 @@ class GardenViewModel @Inject constructor(
                             solBalance = balance,
                             plants = plants,
                             totalPortfolioValue = portfolioSol,
+                            totalPortfolioUsd = totalUsd,
                             solPrice = solPrice,
                             isLoading = false,
                             weather = weather,
