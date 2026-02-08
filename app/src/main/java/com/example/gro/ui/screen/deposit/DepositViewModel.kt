@@ -2,6 +2,7 @@ package com.example.gro.ui.screen.deposit
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.gro.domain.model.PlantSpecies
 import com.example.gro.domain.repository.DepositResult
 import com.example.gro.domain.repository.WalletRepository
 import com.example.gro.domain.usecase.DepositUseCase
@@ -21,6 +22,7 @@ data class DepositUiState(
     val depositSuccess: Boolean = false,
     val error: String? = null,
     val showAnimation: Boolean = false,
+    val selectedSpecies: PlantSpecies = PlantSpecies.SOL,
 )
 
 @HiltViewModel
@@ -31,6 +33,12 @@ class DepositViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(DepositUiState())
     val uiState: StateFlow<DepositUiState> = _uiState
+
+    val availableSpecies: List<PlantSpecies> = PlantSpecies.entries
+
+    fun selectSpecies(species: PlantSpecies) {
+        _uiState.update { it.copy(selectedSpecies = species) }
+    }
 
     fun selectPresetAmount(sol: Double) {
         val lamports = (sol * 1_000_000_000).toLong()
@@ -46,12 +54,13 @@ class DepositViewModel @Inject constructor(
     fun submitDeposit(sender: ActivityResultSender) {
         val address = walletRepository.getConnectedAddress() ?: return
         val lamports = _uiState.value.amountLamports
+        val species = _uiState.value.selectedSpecies
         if (lamports <= 0) return
 
         _uiState.update { it.copy(isSubmitting = true, error = null) }
 
         viewModelScope.launch {
-            val result = depositUseCase(sender, address, lamports)
+            val result = depositUseCase(sender, address, lamports, species)
             when (result) {
                 is DepositResult.Success -> {
                     _uiState.update {

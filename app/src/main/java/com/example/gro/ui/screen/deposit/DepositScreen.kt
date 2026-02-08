@@ -3,6 +3,7 @@ package com.example.gro.ui.screen.deposit
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
@@ -29,9 +32,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gro.domain.model.PlantSpecies
 import com.example.gro.ui.component.GroButton
 import com.example.gro.ui.component.GroButtonStyle
 import com.example.gro.ui.component.garden.SeedPlantingAnimation
+import com.example.gro.ui.theme.GroBark
 import com.example.gro.ui.theme.GroCream
 import com.example.gro.ui.theme.GroEarth
 import com.example.gro.ui.theme.GroGreen
@@ -79,7 +84,7 @@ fun DepositScreen(
                 )
             }
 
-            Spacer(modifier = Modifier.height(GroSpacing.xxl))
+            Spacer(modifier = Modifier.height(GroSpacing.lg))
 
             // Title
             Text(
@@ -88,7 +93,31 @@ fun DepositScreen(
                 color = MaterialTheme.colorScheme.onBackground,
             )
 
-            Spacer(modifier = Modifier.height(GroSpacing.xl))
+            Spacer(modifier = Modifier.height(GroSpacing.md))
+
+            // Species picker
+            Text(
+                text = "Choose your plant",
+                style = MaterialTheme.typography.labelLarge,
+                color = GroEarth,
+            )
+            Spacer(modifier = Modifier.height(GroSpacing.sm))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(GroSpacing.xs),
+            ) {
+                viewModel.availableSpecies.forEach { species ->
+                    SpeciesChip(
+                        species = species,
+                        selected = uiState.selectedSpecies == species,
+                        onClick = { viewModel.selectSpecies(species) },
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(GroSpacing.lg))
 
             // Amount display
             Text(
@@ -102,8 +131,13 @@ fun DepositScreen(
                     GroEarth
                 },
             )
+            Text(
+                text = "to grow ${uiState.selectedSpecies.plantName}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = GroEarth,
+            )
 
-            Spacer(modifier = Modifier.height(GroSpacing.xl))
+            Spacer(modifier = Modifier.height(GroSpacing.lg))
 
             // Preset chips
             Row(
@@ -151,7 +185,7 @@ fun DepositScreen(
 
             // Submit
             GroButton(
-                text = if (uiState.amountLamports > 0) "Plant seed" else "Enter an amount",
+                text = if (uiState.amountLamports > 0) "Plant ${uiState.selectedSpecies.plantName}" else "Enter an amount",
                 onClick = { viewModel.submitDeposit(activityResultSender) },
                 enabled = uiState.amountLamports > 0 && !uiState.isSubmitting,
                 isLoading = uiState.isSubmitting,
@@ -167,6 +201,38 @@ fun DepositScreen(
                 onAnimationComplete = { viewModel.dismissAnimation() },
             )
         }
+    }
+}
+
+@Composable
+private fun SpeciesChip(
+    species: PlantSpecies,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    val bgColor = if (selected) GroGreen else GroCream
+    val textColor = if (selected) GroCream else GroBark
+    val borderColor = if (selected) GroGreen else GroSand
+
+    Column(
+        modifier = Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.5.dp, borderColor, RoundedCornerShape(16.dp))
+            .background(bgColor)
+            .clickable(onClick = onClick)
+            .padding(horizontal = GroSpacing.md, vertical = GroSpacing.sm),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = species.displayName,
+            style = MaterialTheme.typography.labelLarge,
+            color = textColor,
+        )
+        Text(
+            text = species.plantName,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (selected) GroCream.copy(alpha = 0.8f) else GroEarth,
+        )
     }
 }
 
