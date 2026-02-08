@@ -50,10 +50,11 @@ fun PlantDetailScreen(
     onNavigateToDeposit: () -> Unit,
     viewModel: PlantDetailViewModel = hiltViewModel(),
 ) {
-    val plant by viewModel.plant.collectAsState()
+    val detailState by viewModel.uiState.collectAsState()
 
     PlantDetailContent(
-        plant = plant,
+        plant = detailState.plant,
+        marinadeApy = detailState.marinadeApy,
         onNavigateBack = onNavigateBack,
         onNavigateToDeposit = onNavigateToDeposit,
     )
@@ -62,6 +63,7 @@ fun PlantDetailScreen(
 @Composable
 private fun PlantDetailContent(
     plant: Plant?,
+    marinadeApy: Double = 0.0,
     onNavigateBack: () -> Unit,
     onNavigateToDeposit: () -> Unit,
 ) {
@@ -146,6 +148,14 @@ private fun PlantDetailContent(
                         label = "Rarity",
                         value = p.species.rarity.name.lowercase().replaceFirstChar { it.uppercase() },
                     )
+
+                    if (marinadeApy > 0 && p.species == PlantSpecies.SOL) {
+                        Spacer(modifier = Modifier.height(GroSpacing.sm))
+                        DetailRow(
+                            label = "Staking APY",
+                            value = "${"%.1f".format(marinadeApy * 100)}% (Marinade)",
+                        )
+                    }
 
                     Spacer(modifier = Modifier.height(GroSpacing.lg))
 

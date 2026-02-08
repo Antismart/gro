@@ -72,9 +72,45 @@ class PriceFeedService @Inject constructor(
         }
     }
 
+    suspend fun getMarinadeApy(): Double {
+        apyCacheMutex.withLock {
+            val now = System.currentTimeMillis()
+            if (now - apyCacheTimestamp < APY_CACHE_TTL_MS && cachedApy > 0) {
+                return cachedApy
+            }
+        }
+
+        return withContext(Dispatchers.IO) {
+            try {
+                val response: String = httpClient.get(MARINADE_STATS_API).body()
+                val parsed = json.parseToJsonElement(response).jsonObject
+                val apy = parsed["avg_staking_apy"]?.jsonPrimitive?.content?.toDoubleOrNull()
+                    ?: FALLBACK_APY
+
+                apyCacheMutex.withLock {
+                    cachedApy = apy
+                    apyCacheTimestamp = System.currentTimeMillis()
+                }
+
+                Log.d(TAG, "Marinade APY: ${"%.2f".format(apy * 100)}%")
+                apy
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to fetch Marinade APY, using fallback", e)
+                FALLBACK_APY
+            }
+        }
+    }
+
+    private val apyCacheMutex = Mutex()
+    private var cachedApy: Double = 0.0
+    private var apyCacheTimestamp: Long = 0L
+
     companion object {
         private const val TAG = "PriceFeed"
         private const val JUPITER_PRICE_API = "https://api.jup.ag/price/v2"
+        private const val MARINADE_STATS_API = "https://api.marinade.finance/msol/apy/30d"
         private const val CACHE_TTL_MS = 60_000L
+        private const val APY_CACHE_TTL_MS = 300_000L // 5 min cache for APY
+        private const val FALLBACK_APY = 0.068 // ~6.8% fallback
     }
 }
