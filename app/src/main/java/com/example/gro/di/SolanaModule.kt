@@ -3,9 +3,13 @@ package com.example.gro.di
 import android.net.Uri
 import com.example.gro.data.repository.DepositRepositoryImpl
 import com.example.gro.data.repository.GardenRepositoryImpl
+import com.example.gro.data.repository.JournalRepositoryImpl
+import com.example.gro.data.repository.StreakRepositoryImpl
 import com.example.gro.data.repository.WalletRepositoryImpl
 import com.example.gro.domain.repository.DepositRepository
 import com.example.gro.domain.repository.GardenRepository
+import com.example.gro.domain.repository.JournalRepository
+import com.example.gro.domain.repository.StreakRepository
 import com.example.gro.domain.repository.WalletRepository
 import com.solana.mobilewalletadapter.clientlib.ConnectionIdentity
 import com.solana.mobilewalletadapter.clientlib.MobileWalletAdapter
@@ -31,6 +35,14 @@ abstract class SolanaModule {
     @Binds
     @Singleton
     abstract fun bindDepositRepository(impl: DepositRepositoryImpl): DepositRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindStreakRepository(impl: StreakRepositoryImpl): StreakRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindJournalRepository(impl: JournalRepositoryImpl): JournalRepository
 
     companion object {
         @Provides

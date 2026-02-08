@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import com.example.gro.domain.model.GardenWeather
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -26,7 +27,10 @@ private data class GrassBladeData(val x: Float, val height: Float, val lean: Flo
 private data class SparkleData(val x: Float, val y: Float, val size: Float, val phase: Float)
 
 @Composable
-fun GardenBackground(modifier: Modifier = Modifier) {
+fun GardenBackground(
+    weather: GardenWeather = GardenWeather.SUNNY,
+    modifier: Modifier = Modifier,
+) {
     val transition = rememberInfiniteTransition(label = "bg")
 
     val cloudDrift by transition.animateFloat(
@@ -96,9 +100,11 @@ fun GardenBackground(modifier: Modifier = Modifier) {
         val w = size.width
         val h = size.height
 
-        drawSky(w, h)
-        drawSun(w, h)
-        drawClouds(w, h, clouds, cloudDrift)
+        drawSky(w, h, weather)
+        if (weather != GardenWeather.RAINY) {
+            drawSun(w, h, weather == GardenWeather.GOLDEN_HOUR)
+        }
+        drawClouds(w, h, clouds, cloudDrift, weather)
         drawDistantHills(w, h)
         drawMidgroundHills(w, h)
         drawGrassland(w, h)
@@ -108,15 +114,24 @@ fun GardenBackground(modifier: Modifier = Modifier) {
     }
 }
 
-private fun DrawScope.drawSky(w: Float, h: Float) {
+private fun DrawScope.drawSky(w: Float, h: Float, weather: GardenWeather) {
+    val skyColors = when (weather) {
+        GardenWeather.GOLDEN_HOUR -> listOf(
+            Color(0xFFFDE8C8), Color(0xFFF5D6A0), Color(0xFFD4C4A0), Color(0xFFB8C8A0),
+        )
+        GardenWeather.RAINY -> listOf(
+            Color(0xFF9AAFBF), Color(0xFFA0B8C0), Color(0xFF98B0A8), Color(0xFF88A898),
+        )
+        GardenWeather.CLOUDY -> listOf(
+            Color(0xFFB0C8D8), Color(0xFFBBCED8), Color(0xFFAACDB5), Color(0xFF98C0A8),
+        )
+        else -> listOf(
+            Color(0xFFC8E0F0), Color(0xFFD4E8F0), Color(0xFFBDD9C7), Color(0xFFA8D5BA),
+        )
+    }
     drawRect(
         brush = Brush.verticalGradient(
-            colors = listOf(
-                Color(0xFFC8E0F0),
-                Color(0xFFD4E8F0),
-                Color(0xFFBDD9C7),
-                Color(0xFFA8D5BA),
-            ),
+            colors = skyColors,
             startY = 0f,
             endY = h * 0.58f,
         ),
@@ -124,15 +139,18 @@ private fun DrawScope.drawSky(w: Float, h: Float) {
     )
 }
 
-private fun DrawScope.drawSun(w: Float, h: Float) {
+private fun DrawScope.drawSun(w: Float, h: Float, isGoldenHour: Boolean) {
     val sunCenter = Offset(w * 0.82f, h * 0.08f)
+    val glowAlpha = if (isGoldenHour) 0.45f else 0.19f
+    val discAlpha = if (isGoldenHour) 0.6f else 0.31f
+    val glowColor = if (isGoldenHour) Color(0xFFFFD700) else Color(0xFFFFFDE7)
     // Outer glow
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                Color(0x30FFFDE7),
-                Color(0x18FFF9C4),
-                Color(0x00FFF9C4),
+                glowColor.copy(alpha = glowAlpha),
+                Color(0xFFFFF9C4).copy(alpha = glowAlpha * 0.5f),
+                Color.Transparent,
             ),
             center = sunCenter,
             radius = w * 0.18f,
@@ -144,8 +162,8 @@ private fun DrawScope.drawSun(w: Float, h: Float) {
     drawCircle(
         brush = Brush.radialGradient(
             colors = listOf(
-                Color(0x50FFFDE7),
-                Color(0x30FFF59D),
+                glowColor.copy(alpha = discAlpha),
+                Color(0xFFFFF59D).copy(alpha = discAlpha * 0.6f),
             ),
             center = sunCenter,
             radius = w * 0.05f,
@@ -155,12 +173,18 @@ private fun DrawScope.drawSun(w: Float, h: Float) {
     )
 }
 
-private fun DrawScope.drawClouds(w: Float, h: Float, clouds: List<CloudData>, drift: Float) {
+private fun DrawScope.drawClouds(w: Float, h: Float, clouds: List<CloudData>, drift: Float, weather: GardenWeather) {
+    val cloudAlpha = when (weather) {
+        GardenWeather.RAINY -> 0.55f
+        GardenWeather.CLOUDY -> 0.45f
+        GardenWeather.GOLDEN_HOUR -> 0.2f
+        else -> 0.25f
+    }
     clouds.forEach { cloud ->
         val driftOffset = (drift * cloud.speed) % 1.4f - 0.2f
         val cx = ((cloud.x + driftOffset) % 1.3f) - 0.15f
-        val color = Color(0x40FFFFFF)
-        val colorInner = Color(0x55FFFFFF)
+        val color = Color(0xFFFFFFFF).copy(alpha = cloudAlpha)
+        val colorInner = Color(0xFFFFFFFF).copy(alpha = cloudAlpha * 1.3f)
 
         // Main body
         drawRoundRect(

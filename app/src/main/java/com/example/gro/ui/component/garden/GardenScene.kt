@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalDensity
+import com.example.gro.domain.model.GardenWeather
 import com.example.gro.domain.model.Plant
 import kotlin.random.Random
 
@@ -18,6 +19,7 @@ import kotlin.random.Random
 fun GardenScene(
     plants: List<Plant>,
     onPlantClick: (Plant) -> Unit,
+    weather: GardenWeather = GardenWeather.SUNNY,
     modifier: Modifier = Modifier,
 ) {
     // Scene-level fade-in
@@ -32,7 +34,7 @@ fun GardenScene(
         val sceneHeightPx = with(density) { maxHeight.toPx() }
 
         // Background layers
-        GardenBackground(modifier = Modifier.fillMaxSize())
+        GardenBackground(weather = weather, modifier = Modifier.fillMaxSize())
 
         // Plant grid: 4 columns x 3 rows
         // Plants placed in the bottom 40% of the scene (ground area)
@@ -71,5 +73,8 @@ fun GardenScene(
                 modifier = Modifier.offset(x = offsetX, y = offsetY),
             )
         }
+
+        // Weather overlay on top of everything
+        WeatherOverlay(weather = weather, modifier = Modifier.fillMaxSize())
     }
 }

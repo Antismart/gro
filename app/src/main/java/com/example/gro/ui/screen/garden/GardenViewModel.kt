@@ -3,8 +3,12 @@ package com.example.gro.ui.screen.garden
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gro.data.remote.SolanaRpcClient
+import com.example.gro.domain.model.GardenWeather
 import com.example.gro.domain.model.Plant
+import com.example.gro.domain.model.Streak
+import com.example.gro.domain.repository.StreakRepository
 import com.example.gro.domain.repository.WalletRepository
+import com.example.gro.domain.usecase.CalculateWeatherUseCase
 import com.example.gro.domain.usecase.ObserveGardenUseCase
 import com.example.gro.domain.usecase.SyncGardenUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -21,8 +25,9 @@ data class GardenUiState(
     val totalPortfolioValue: Double = 0.0,
     val isLoading: Boolean = true,
     val error: String? = null,
-    val selectedPlant: Plant? = null,
     val greeting: String = "Good morning",
+    val streak: Streak? = null,
+    val weather: GardenWeather = GardenWeather.SUNNY,
 )
 
 @HiltViewModel
@@ -31,6 +36,8 @@ class GardenViewModel @Inject constructor(
     private val solanaRpcClient: SolanaRpcClient,
     private val observeGardenUseCase: ObserveGardenUseCase,
     private val syncGardenUseCase: SyncGardenUseCase,
+    private val streakRepository: StreakRepository,
+    private val calculateWeatherUseCase: CalculateWeatherUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(GardenUiState())
@@ -54,6 +61,16 @@ class GardenViewModel @Inject constructor(
             )
         }
 
+        // Observe streak
+        viewModelScope.launch {
+            streakRepository.observeStreak(address).collect { streak ->
+                _uiState.update { state ->
+                    val weather = calculateWeatherUseCase(streak, state.plants)
+                    state.copy(streak = streak, weather = weather)
+                }
+            }
+        }
+
         viewModelScope.launch {
             try {
                 val balance = solanaRpcClient.getBalance(address)
@@ -61,12 +78,14 @@ class GardenViewModel @Inject constructor(
 
                 observeGardenUseCase(address).collect { plants ->
                     val portfolioValue = balance / 1_000_000_000.0
-                    _uiState.update {
-                        it.copy(
+                    _uiState.update { state ->
+                        val weather = calculateWeatherUseCase(state.streak, plants)
+                        state.copy(
                             solBalance = balance,
                             plants = plants,
                             totalPortfolioValue = portfolioValue,
                             isLoading = false,
+                            weather = weather,
                         )
                     }
                 }
@@ -76,14 +95,6 @@ class GardenViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun selectPlant(plant: Plant) {
-        _uiState.update { it.copy(selectedPlant = plant) }
-    }
-
-    fun dismissPlantDetail() {
-        _uiState.update { it.copy(selectedPlant = null) }
     }
 
     fun disconnect() {
