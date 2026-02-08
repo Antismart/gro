@@ -6,6 +6,7 @@ import com.example.gro.domain.model.JournalAction
 import com.example.gro.domain.model.JournalEntry
 import com.example.gro.domain.repository.JournalRepository
 import com.example.gro.domain.repository.WalletRepository
+import com.example.gro.domain.usecase.SyncJournalFromChainUseCase
 import com.example.gro.ui.component.journal.WeeklySummary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +25,7 @@ data class JournalUiState(
 class JournalViewModel @Inject constructor(
     private val journalRepository: JournalRepository,
     private val walletRepository: WalletRepository,
+    private val syncJournalFromChainUseCase: SyncJournalFromChainUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(JournalUiState())
@@ -35,6 +37,11 @@ class JournalViewModel @Inject constructor(
 
     private fun loadJournal() {
         val address = walletRepository.getConnectedAddress() ?: return
+
+        // Sync from on-chain history in background
+        viewModelScope.launch {
+            syncJournalFromChainUseCase(address)
+        }
 
         viewModelScope.launch {
             journalRepository.observeEntries(address).collect { entries ->

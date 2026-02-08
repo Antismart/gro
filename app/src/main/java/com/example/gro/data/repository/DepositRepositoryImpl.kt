@@ -3,6 +3,7 @@ package com.example.gro.data.repository
 import android.content.Context
 import android.os.PowerManager
 import android.util.Log
+import com.example.gro.data.remote.MarinadeService
 import com.example.gro.data.remote.SolanaConfig
 import com.example.gro.data.remote.SolanaRpcClient
 import com.example.gro.domain.model.PlantSpecies
@@ -25,6 +26,7 @@ class DepositRepositoryImpl @Inject constructor(
     private val solanaRpcClient: SolanaRpcClient,
     private val mobileWalletAdapter: MobileWalletAdapter,
     private val config: SolanaConfig,
+    private val marinadeService: MarinadeService,
     @ApplicationContext private val context: Context,
 ) : DepositRepository {
 
@@ -47,16 +49,6 @@ class DepositRepositoryImpl @Inject constructor(
 
             val fromPubkey = PublicKey(fromAddress)
 
-            // On mainnet: transfer to Marinade stake pool / Grō vault
-            // On devnet: self-transfer (safe for demos, user keeps SOL)
-            val toPubkey = if (config.cluster == "mainnet-beta") {
-                PublicKey(MAINNET_VAULT)
-            } else {
-                fromPubkey
-            }
-
-            val transferIx = TransferInstruction(fromPubkey, toPubkey, lamports)
-
             // SPL Memo instruction for on-chain Grō deposit identification
             val memoData = "gro:deposit:v1:${species.name}:$lamports"
             val memoProgramId = PublicKey(MEMO_PROGRAM_ID)
@@ -66,9 +58,19 @@ class DepositRepositoryImpl @Inject constructor(
                 memoProgramId,
             )
 
-            val transaction = Transaction(blockhash, listOf(transferIx, memoIx), fromPubkey)
+            val instructions = if (config.cluster == "mainnet-beta") {
+                // Mainnet: Marinade liquid staking (SOL → mSOL)
+                Log.d(TAG, "Building Marinade deposit instruction for mainnet")
+                marinadeService.buildDepositInstructions(fromPubkey, lamports) + memoIx
+            } else {
+                // Devnet: self-transfer (safe for demos, user keeps SOL)
+                val transferIx = TransferInstruction(fromPubkey, fromPubkey, lamports)
+                listOf(transferIx, memoIx)
+            }
+
+            val transaction = Transaction(blockhash, instructions, fromPubkey)
             val serializedTx = transaction.serialize()
-            Log.d(TAG, "Built tx with memo ($memoData), ${serializedTx.size} bytes")
+            Log.d(TAG, "Built tx with ${instructions.size} instructions, ${serializedTx.size} bytes")
 
             val result = mobileWalletAdapter.transact(sender) {
                 signAndSendTransactions(
@@ -108,8 +110,5 @@ class DepositRepositoryImpl @Inject constructor(
     companion object {
         private const val TAG = "DepositRepo"
         private const val MEMO_PROGRAM_ID = "MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"
-        // Marinade Finance mSOL stake pool on mainnet
-        // In production, this would be the Marinade deposit address
-        private const val MAINNET_VAULT = "mSoLzYCxHdYgdzU16g5QSh3i5K3z3KZK7ytfqcJm7So"
     }
 }

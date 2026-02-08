@@ -1,6 +1,7 @@
 package com.example.gro.data.remote
 
 import android.util.Log
+import com.example.gro.util.withRetry
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.request.get
@@ -36,21 +37,25 @@ class PriceFeedService @Inject constructor(
 
         return withContext(Dispatchers.IO) {
             try {
-                val ids = mintAddresses.joinToString(",")
-                val response: String = httpClient.get(JUPITER_PRICE_API) {
-                    parameter("ids", ids)
-                }.body()
+                val prices = withRetry(tag = "PriceFeed") {
+                    val ids = mintAddresses.joinToString(",")
+                    val response: String = httpClient.get(JUPITER_PRICE_API) {
+                        parameter("ids", ids)
+                    }.body()
 
-                val parsed = json.parseToJsonElement(response).jsonObject
-                val data = parsed["data"]?.jsonObject ?: return@withContext emptyMap()
+                    val parsed = json.parseToJsonElement(response).jsonObject
+                    val data = parsed["data"]?.jsonObject
+                        ?: return@withRetry emptyMap<String, Double>()
 
-                val prices = mutableMapOf<String, Double>()
-                for (mint in mintAddresses) {
-                    val tokenData = data[mint]?.jsonObject ?: continue
-                    val price = tokenData["price"]?.jsonPrimitive?.content?.toDoubleOrNull()
-                    if (price != null) {
-                        prices[mint] = price
+                    val result = mutableMapOf<String, Double>()
+                    for (mint in mintAddresses) {
+                        val tokenData = data[mint]?.jsonObject ?: continue
+                        val price = tokenData["price"]?.jsonPrimitive?.content?.toDoubleOrNull()
+                        if (price != null) {
+                            result[mint] = price
+                        }
                     }
+                    result
                 }
 
                 cacheMutex.withLock {
