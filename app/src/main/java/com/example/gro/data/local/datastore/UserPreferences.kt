@@ -19,6 +19,7 @@ data class UserPreferencesData(
     val hasCompletedOnboarding: Boolean = false,
     val connectedWalletAddress: String? = null,
     val walletAuthToken: String? = null,
+    val notificationsEnabled: Boolean = true,
 )
 
 @Singleton
@@ -29,6 +30,7 @@ class UserPreferences @Inject constructor(
     private companion object {
         val HAS_COMPLETED_ONBOARDING = booleanPreferencesKey("has_completed_onboarding")
         val CONNECTED_WALLET_ADDRESS = stringPreferencesKey("connected_wallet_address")
+        val NOTIFICATIONS_ENABLED = booleanPreferencesKey("notifications_enabled")
     }
 
     val userPreferencesFlow: Flow<UserPreferencesData> = dataStore.data.map { prefs ->
@@ -36,6 +38,7 @@ class UserPreferences @Inject constructor(
             hasCompletedOnboarding = prefs[HAS_COMPLETED_ONBOARDING] ?: false,
             connectedWalletAddress = prefs[CONNECTED_WALLET_ADDRESS],
             walletAuthToken = secureTokenStorage.getAuthToken(),
+            notificationsEnabled = prefs[NOTIFICATIONS_ENABLED] ?: true,
         )
     }
 
@@ -49,6 +52,12 @@ class UserPreferences @Inject constructor(
         secureTokenStorage.setAuthToken(authToken)
         dataStore.edit { prefs ->
             prefs[CONNECTED_WALLET_ADDRESS] = address
+        }
+    }
+
+    suspend fun setNotificationsEnabled(enabled: Boolean) {
+        dataStore.edit { prefs ->
+            prefs[NOTIFICATIONS_ENABLED] = enabled
         }
     }
 
