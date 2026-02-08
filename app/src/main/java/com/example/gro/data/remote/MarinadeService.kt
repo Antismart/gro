@@ -1,5 +1,6 @@
 package com.example.gro.data.remote
 
+import android.util.Log
 import org.sol4k.AccountMeta
 import org.sol4k.PublicKey
 import org.sol4k.instruction.BaseInstruction
@@ -12,7 +13,26 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class MarinadeService @Inject constructor() {
+class MarinadeService @Inject constructor(
+    private val solanaRpcClient: SolanaRpcClient,
+) {
+    private var verified = false
+
+    suspend fun verifyAccounts() {
+        if (verified) return
+        try {
+            // Verify the Marinade state account exists on-chain
+            val balance = solanaRpcClient.getBalance(MARINADE_STATE.toBase58())
+            if (balance > 0) {
+                Log.d(TAG, "Marinade state account verified on-chain")
+                verified = true
+            } else {
+                Log.w(TAG, "Marinade state account not found — may be wrong cluster")
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not verify Marinade accounts", e)
+        }
+    }
 
     fun buildDepositInstructions(
         userWallet: PublicKey,
@@ -67,6 +87,8 @@ class MarinadeService @Inject constructor() {
     }
 
     companion object {
+        private const val TAG = "Marinade"
+
         // Marinade Finance mainnet addresses
         val MARINADE_PROGRAM = PublicKey("MarBmsSgKXdrN1egZf5sqe1TMai9K1rChYNDJgjq7aD")
         val MARINADE_STATE = PublicKey("8szGkuLTAux9XMgZ2vtY39jVSowEcpBfFfD8hXSEqdGC")

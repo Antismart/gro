@@ -6,6 +6,7 @@ import com.example.gro.domain.model.PlantSpecies
 import com.example.gro.domain.repository.DepositResult
 import com.example.gro.domain.repository.WalletRepository
 import com.example.gro.domain.usecase.DepositUseCase
+import com.example.gro.util.isValidDepositAmount
 import com.solana.mobilewalletadapter.clientlib.ActivityResultSender
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -54,8 +55,14 @@ class DepositViewModel @Inject constructor(
     fun submitDeposit(sender: ActivityResultSender) {
         val address = walletRepository.getConnectedAddress() ?: return
         val lamports = _uiState.value.amountLamports
+        val amountSol = _uiState.value.amountSol
         val species = _uiState.value.selectedSpecies
         if (lamports <= 0) return
+
+        if (!isValidDepositAmount(amountSol)) {
+            _uiState.update { it.copy(error = "Invalid deposit amount") }
+            return
+        }
 
         _uiState.update { it.copy(isSubmitting = true, error = null) }
 

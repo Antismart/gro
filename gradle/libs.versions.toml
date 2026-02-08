@@ -22,7 +22,7 @@ datastorePreferences = "1.1.6"
 workRuntimeKtx = "2.10.0"
 sol4k = "0.4.2"
 mwaClientlib = "2.0.8"
-securityCrypto = "1.0.0"
+securityCrypto = "1.1.0-alpha06"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }

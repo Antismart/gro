@@ -61,6 +61,7 @@ class DepositRepositoryImpl @Inject constructor(
             val instructions = if (config.cluster == "mainnet-beta") {
                 // Mainnet: Marinade liquid staking (SOL → mSOL)
                 Log.d(TAG, "Building Marinade deposit instruction for mainnet")
+                marinadeService.verifyAccounts()
                 marinadeService.buildDepositInstructions(fromPubkey, lamports) + memoIx
             } else {
                 // Devnet: self-transfer (safe for demos, user keeps SOL)

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.gro.domain.model.Plant
 import com.example.gro.domain.usecase.VisitGardenUseCase
+import com.example.gro.util.isValidSolanaAddress
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -28,12 +29,17 @@ class VisitGardenViewModel @Inject constructor(
     val uiState: StateFlow<VisitUiState> = _uiState
 
     fun updateAddress(address: String) {
-        _uiState.update { it.copy(friendAddress = address) }
+        _uiState.update { it.copy(friendAddress = address, error = null) }
     }
 
     fun visitGarden() {
         val address = _uiState.value.friendAddress.trim()
         if (address.isBlank()) return
+
+        if (!isValidSolanaAddress(address)) {
+            _uiState.update { it.copy(error = "Invalid Solana address") }
+            return
+        }
 
         _uiState.update { it.copy(isLoading = true, error = null) }
 
