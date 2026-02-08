@@ -144,10 +144,9 @@ private fun GardenContent(
                         color = MaterialTheme.colorScheme.onBackground,
                         textAlign = TextAlign.Center,
                     )
-                    if (uiState.solPrice > 0) {
-                        val usdValue = uiState.totalPortfolioValue * uiState.solPrice
+                    if (uiState.totalPortfolioUsd > 0) {
                         Text(
-                            text = "${"$%.2f".format(usdValue)} USD",
+                            text = "${"$%.2f".format(uiState.totalPortfolioUsd)} USD",
                             style = MaterialTheme.typography.bodyMedium,
                             color = GroEarth.copy(alpha = 0.7f),
                             textAlign = TextAlign.Center,
@@ -207,58 +206,24 @@ private fun GardenContent(
                 }
             }
 
-            // BOTTOM — Action Bar
-            Box(
+            // BOTTOM — Quick Actions
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .shadow(
-                        elevation = 8.dp,
-                        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp),
-                        clip = false,
-                    )
-                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
-                    .background(Color(0xFFFAF7F2)) // GroSurface
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(horizontal = GroSpacing.lg, vertical = GroSpacing.md),
+                    .padding(horizontal = GroSpacing.lg, vertical = GroSpacing.sm),
+                horizontalArrangement = Arrangement.spacedBy(GroSpacing.sm),
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(GroSpacing.xs),
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(GroSpacing.sm),
-                    ) {
-                        GroButton(
-                            text = "Water",
-                            onClick = onNavigateToDeposit,
-                            modifier = Modifier.weight(1f),
-                        )
-                        GroButton(
-                            text = "Visit",
-                            onClick = onNavigateToVisit,
-                            style = GroButtonStyle.Secondary,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(GroSpacing.sm),
-                    ) {
-                        GroButton(
-                            text = "Journal",
-                            onClick = onNavigateToJournal,
-                            style = GroButtonStyle.Secondary,
-                            modifier = Modifier.weight(1f),
-                        )
-                        GroButton(
-                            text = "Disconnect",
-                            onClick = onDisconnect,
-                            style = GroButtonStyle.Tertiary,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
+                GroButton(
+                    text = "Water",
+                    onClick = onNavigateToDeposit,
+                    modifier = Modifier.weight(1f),
+                )
+                GroButton(
+                    text = "Journal",
+                    onClick = onNavigateToJournal,
+                    style = GroButtonStyle.Secondary,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
