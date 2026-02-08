@@ -1,0 +1,177 @@
+package com.example.gro.ui.screen.visit
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.gro.ui.component.GroButton
+import com.example.gro.ui.component.GroButtonStyle
+import com.example.gro.ui.component.garden.GardenScene
+import com.example.gro.ui.theme.GroBark
+import com.example.gro.ui.theme.GroCream
+import com.example.gro.ui.theme.GroEarth
+import com.example.gro.ui.theme.GroGreen
+import com.example.gro.ui.theme.GroSand
+import com.example.gro.ui.theme.GroSpacing
+
+@Composable
+fun VisitGardenScreen(
+    onNavigateBack: () -> Unit,
+    viewModel: VisitGardenViewModel = hiltViewModel(),
+) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(GroCream),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.statusBars),
+        ) {
+            // Header
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = GroSpacing.lg)
+                    .padding(top = GroSpacing.md),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    text = "Visit a Garden",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                )
+                Spacer(modifier = Modifier.height(GroSpacing.xs))
+                Text(
+                    text = "Enter a Solana address to peek at their garden",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = GroEarth,
+                    textAlign = TextAlign.Center,
+                )
+            }
+
+            Spacer(modifier = Modifier.height(GroSpacing.md))
+
+            // Address input
+            if (!uiState.hasVisited || uiState.plants.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = GroSpacing.lg),
+                ) {
+                    OutlinedTextField(
+                        value = uiState.friendAddress,
+                        onValueChange = { viewModel.updateAddress(it) },
+                        label = { Text("Wallet address") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = GroGreen,
+                            unfocusedBorderColor = GroSand,
+                            focusedLabelColor = GroGreen,
+                            unfocusedLabelColor = GroEarth,
+                            cursorColor = GroBark,
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                        keyboardActions = KeyboardActions(onGo = { viewModel.visitGarden() }),
+                    )
+                    Spacer(modifier = Modifier.height(GroSpacing.md))
+                    GroButton(
+                        text = if (uiState.isLoading) "Looking..." else "Visit",
+                        onClick = { viewModel.visitGarden() },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+
+                    uiState.error?.let { error ->
+                        Spacer(modifier = Modifier.height(GroSpacing.sm))
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+            } else {
+                // Friend's address header
+                Text(
+                    text = "${uiState.friendAddress.take(4)}...${uiState.friendAddress.takeLast(4)}'s garden",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = GroEarth,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = GroSpacing.lg),
+                )
+            }
+
+            // Garden scene or loading
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f),
+            ) {
+                when {
+                    uiState.isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .size(32.dp),
+                            color = GroGreen,
+                            strokeWidth = 3.dp,
+                        )
+                    }
+                    uiState.hasVisited && uiState.plants.isNotEmpty() -> {
+                        GardenScene(
+                            plants = uiState.plants,
+                            onPlantClick = {},
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                }
+            }
+
+            // Back button
+            GroButton(
+                text = "Back to my garden",
+                onClick = onNavigateBack,
+                style = GroButtonStyle.Secondary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(horizontal = GroSpacing.lg, vertical = GroSpacing.md),
+            )
+        }
+    }
+}
