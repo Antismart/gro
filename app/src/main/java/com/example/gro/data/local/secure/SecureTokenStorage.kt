@@ -14,19 +14,33 @@ class SecureTokenStorage @Inject constructor(
     @ApplicationContext context: Context,
 ) {
     private val prefs: SharedPreferences = try {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        EncryptedSharedPreferences.create(
-            context,
-            PREFS_NAME,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-        )
+        createEncryptedPrefs(context)
     } catch (e: Exception) {
-        Log.e(TAG, "Failed to create encrypted prefs, falling back", e)
-        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        Log.e(TAG, "Encrypted prefs corrupted, clearing and retrying", e)
+        context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().apply()
+        try {
+            context.deleteSharedPreferences(PREFS_NAME)
+        } catch (_: Exception) { }
+        createEncryptedPrefs(context)
+    }
+
+    private companion object {
+        const val TAG = "SecureStorage"
+        const val PREFS_NAME = "gro_secure_prefs"
+        const val KEY_AUTH_TOKEN = "wallet_auth_token"
+
+        fun createEncryptedPrefs(context: Context): SharedPreferences {
+            val masterKey = MasterKey.Builder(context)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            return EncryptedSharedPreferences.create(
+                context,
+                PREFS_NAME,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+            )
+        }
     }
 
     fun getAuthToken(): String? = prefs.getString(KEY_AUTH_TOKEN, null)
@@ -39,9 +53,4 @@ class SecureTokenStorage @Inject constructor(
         prefs.edit().remove(KEY_AUTH_TOKEN).apply()
     }
 
-    companion object {
-        private const val TAG = "SecureStorage"
-        private const val PREFS_NAME = "gro_secure_prefs"
-        private const val KEY_AUTH_TOKEN = "wallet_auth_token"
-    }
 }
